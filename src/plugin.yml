@@ -1,0 +1,9 @@
+name: ServerPerformance
+main: me.kenny.serverperformance.ServerPerformance
+author: Kenny
+version: 0.1
+description: Lists what's taking the most server performance in a percent list.
+commands:
+  performance:
+    aliases: [serverperformance]
+    description: Lists what's taking the most server performance in a percent list.
