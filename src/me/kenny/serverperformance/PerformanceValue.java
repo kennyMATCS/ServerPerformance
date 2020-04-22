@@ -6,11 +6,13 @@ public class PerformanceValue {
     private String name;
     private long ticks;
     private Material material;
+    private boolean spigot;
 
-    public PerformanceValue(String name, long ticks, Material material) {
+    public PerformanceValue(String name, long ticks, Material material, boolean spigot) {
         this.name = name;
         this.ticks = ticks;
         this.material = material;
+        this.spigot = spigot;
     }
 
     public long getTicks() {
@@ -27,5 +29,9 @@ public class PerformanceValue {
 
     public Material getMaterial() {
         return material;
+    }
+
+    public boolean getSpigot() {
+        return spigot;
     }
 }

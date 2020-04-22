@@ -3,6 +3,7 @@ package me.kenny.serverperformance;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -39,68 +40,95 @@ public class ServerPerformance extends JavaPlugin implements CommandExecutor, Li
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (sender instanceof Player) {
             Player player = (Player) sender;
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            PrintStream ps = new PrintStream(byteArrayOutputStream);
-            PrintStream old = System.out;
-            System.setOut(ps);
-            CustomTimingsHandler.printTimings(System.out);
-            System.out.flush();
-            System.setOut(old);
+            new ServerPerfomanceGUI(player, getPerfomanceValues(), getTotalTickTime(), true);
+        }
+        return true;
+    }
 
-            List<PerformanceValue> performanceValues = new ArrayList<>();
-            Set<PerformanceValue> remove = new HashSet<>();
-            String[] split = byteArrayOutputStream.toString().split("\\r?\\n");
-            long totalTickTime = 0;
-            for (int i = 0; i < split.length; i++) {
-                String string = split[i];
-                if (i == 1) {
-                    String lineSplit[] = string.split(" ");
-                    for (int j = 0; j < lineSplit.length; j++) {
-                        String s = lineSplit[j];
-                        if (s.equalsIgnoreCase("Time:"))
-                            totalTickTime = Long.valueOf(lineSplit[j + 1]);
-                    }
+    public long getTotalTickTime() {
+        String[] split = getByteArrayOutputStream().toString().split("\\r?\\n");
+        long totalTickTime = 0;
+        for (int i = 0; i < split.length; i++) {
+            String string = split[i];
+            if (i == 1) {
+                String lineSplit[] = string.split(" ");
+                for (int j = 0; j < lineSplit.length; j++) {
+                    String s = lineSplit[j];
+                    if (s.equalsIgnoreCase("Time:"))
+                        totalTickTime = Long.valueOf(lineSplit[j + 1]);
                 }
+            }
+        }
+        return totalTickTime;
+    }
 
-                if (string.startsWith("    ")) {
-                    String lineSplit[] = string.split(" ");
-                    String stringBefore = "";
-                    for (int j = 0; j < lineSplit.length; j++) {
-                        String s = lineSplit[j];
-                        if (s.equalsIgnoreCase("**"))
-                            break;
-                        if (!s.equalsIgnoreCase("Time:")) {
-                            if (i == 0)
-                                stringBefore = stringBefore + s;
-                            else
-                                stringBefore = stringBefore + " " + s;
+    public ByteArrayOutputStream getByteArrayOutputStream() {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(byteArrayOutputStream);
+        PrintStream old = System.out;
+        System.setOut(ps);
+        CustomTimingsHandler.printTimings(System.out);
+        System.out.flush();
+        System.setOut(old);
+
+        return byteArrayOutputStream;
+    }
+
+    public List<PerformanceValue> getPerfomanceValues() {
+        ByteArrayOutputStream byteArrayOutputStream = getByteArrayOutputStream();
+
+        List<PerformanceValue> performanceValues = new ArrayList<>();
+        Set<PerformanceValue> remove = new HashSet<>();
+        String[] split = byteArrayOutputStream.toString().split("\\r?\\n");
+        long totalTickTime = 0;
+        for (int i = 0; i < split.length; i++) {
+            String string = split[i];
+            if (i == 1) {
+                String lineSplit[] = string.split(" ");
+                for (int j = 0; j < lineSplit.length; j++) {
+                    String s = lineSplit[j];
+                    if (s.equalsIgnoreCase("Time:"))
+                        totalTickTime = Long.valueOf(lineSplit[j + 1]);
+                }
+            }
+
+            if (string.startsWith("    ")) {
+                String lineSplit[] = string.split(" ");
+                String stringBefore = "";
+                for (int j = 0; j < lineSplit.length; j++) {
+                    String s = lineSplit[j];
+                    if (s.equalsIgnoreCase("**"))
+                        break;
+                    if (!s.equalsIgnoreCase("Time:")) {
+                        if (i == 0)
+                            stringBefore = stringBefore + s;
+                        else
+                            stringBefore = stringBefore + " " + s;
+                    } else {
+                        PerformanceValue value = null;
+                        stringBefore = stringBefore.trim();
+                        if (stringBefore.startsWith("Task:") || stringBefore.startsWith("Plugin:")) {
+                            stringBefore = stringBefore.replace("Task:", "Plugin -");
+                            stringBefore = stringBefore.replace("Plugin:", "Plugin -");
+                            String[] stringBeforeSplit = stringBefore.split(" ");
+                            stringBefore = stringBeforeSplit[0] + " " + stringBeforeSplit[1] + " " + stringBeforeSplit[2] + " " + stringBeforeSplit[3];
+                            value = new PerformanceValue(stringBefore, Long.valueOf(lineSplit[j + 1]), Material.NAME_TAG, false);
+                            performanceValues = add(value, performanceValues);
                         } else {
-                            PerformanceValue value = null;
-                            stringBefore = stringBefore.trim();
-                            if (stringBefore.startsWith("Task:") || stringBefore.startsWith("Plugin:")) {
-                                stringBefore = stringBefore.replace("Task:", "Plugin -");
-                                stringBefore = stringBefore.replace("Plugin:", "Plugin -");
-                                String[] stringBeforeSplit = stringBefore.split(" ");
-                                stringBefore = stringBeforeSplit[0] + " " + stringBeforeSplit[1] + " " + stringBeforeSplit[2] + " " + stringBeforeSplit[3];
-                                value = new PerformanceValue(stringBefore, Long.valueOf(lineSplit[j + 1]), Material.REDSTONE);
-                                performanceValues = add(value, performanceValues);
-                            } else {
-                                stringBefore.replace("    ", "");
-                                value = new PerformanceValue(stringBefore, Long.valueOf(lineSplit[j + 1]), Material.NAME_TAG);
-                                performanceValues = add(value, performanceValues);
-                            }
+                            stringBefore.replace("    ", "");
+                            value = new PerformanceValue(stringBefore, Long.valueOf(lineSplit[j + 1]), Material.NAME_TAG, true);
+                            performanceValues = add(value, performanceValues);
                         }
                     }
                 }
             }
-
-            for (PerformanceValue value : remove) {
-                performanceValues.remove(value);
-            }
-
-            new ServerPerfomanceGUI(player, performanceValues, totalTickTime);
         }
-        return true;
+
+        for (PerformanceValue value : remove) {
+            performanceValues.remove(value);
+        }
+
+        return performanceValues;
     }
 
     @EventHandler
@@ -112,9 +140,18 @@ public class ServerPerformance extends JavaPlugin implements CommandExecutor, Li
     }
 
     @EventHandler
-    public void onInventoryMoveEvent(InventoryClickEvent event) {
-        if (event.getView().getTitle().equalsIgnoreCase("Server Performance"))
+    public void onInventoryClickEvent(InventoryClickEvent event) {
+        if (event.getView().getTitle().equalsIgnoreCase("Server Performance")) {
             event.setCancelled(true);
+            if (event.getCurrentItem() != null && event.getCurrentItem().getType() != Material.AIR && event.getCurrentItem().getItemMeta() != null && event.getCurrentItem().getItemMeta().getDisplayName() != null) {
+                ItemStack item = event.getCurrentItem();
+                if (item.getItemMeta().getDisplayName().equalsIgnoreCase(ChatColor.GREEN + "Switch to backend performance.")) {
+                    new ServerPerfomanceGUI((Player) event.getWhoClicked(), getPerfomanceValues(), getTotalTickTime(), true);
+                } else if (item.getItemMeta().getDisplayName().equalsIgnoreCase(ChatColor.GREEN + "Switch to plugin performance.")) {
+                    new ServerPerfomanceGUI((Player) event.getWhoClicked(), getPerfomanceValues(), getTotalTickTime(), false);
+                }
+            }
+        }
     }
 
     public List<PerformanceValue> add(PerformanceValue value, List<PerformanceValue> values) {
