@@ -16,7 +16,8 @@ import java.util.List;
 
 public class ServerPerfomanceGUI {
     public ServerPerfomanceGUI(Player player, List<PerformanceValue> values, long totalTickTime, boolean spigot) {
-        Inventory gui = Bukkit.createInventory(null, 54, "Server Performance");
+        String title = spigot ? "Backend Performance" : "Plugin Performance";
+        Inventory gui = Bukkit.createInventory(null, 54, title);
 
         values.sort(new PeformanceValueComparator());
 

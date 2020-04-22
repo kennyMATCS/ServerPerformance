@@ -116,7 +116,7 @@ public class ServerPerformance extends JavaPlugin implements CommandExecutor, Li
                             performanceValues = add(value, performanceValues);
                         } else {
                             stringBefore.replace("    ", "");
-                            value = new PerformanceValue(stringBefore, Long.valueOf(lineSplit[j + 1]), Material.NAME_TAG, true);
+                            value = new PerformanceValue(stringBefore, Long.valueOf(lineSplit[j + 1]), Material.OAK_SIGN, true);
                             performanceValues = add(value, performanceValues);
                         }
                     }
@@ -141,7 +141,7 @@ public class ServerPerformance extends JavaPlugin implements CommandExecutor, Li
 
     @EventHandler
     public void onInventoryClickEvent(InventoryClickEvent event) {
-        if (event.getView().getTitle().equalsIgnoreCase("Server Performance")) {
+        if (event.getView().getTitle().equalsIgnoreCase("Backend Performance") || event.getView().getTitle().equalsIgnoreCase("Plugin Performance") ) {
             event.setCancelled(true);
             if (event.getCurrentItem() != null && event.getCurrentItem().getType() != Material.AIR && event.getCurrentItem().getItemMeta() != null && event.getCurrentItem().getItemMeta().getDisplayName() != null) {
                 ItemStack item = event.getCurrentItem();
